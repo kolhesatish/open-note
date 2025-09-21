@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-white text-gray-900 font-sans;
+  }
+  
+  * {
+    @apply border-gray-200;
+  }
+}
+
+@layer components {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f9fafb;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f9fafb;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: #9ca3af;
+  }
+}
+
+/* Custom styles for message content */
+.message-content {
+  @apply leading-relaxed;
+}
+
+.message-content p {
+  @apply mb-3;
+}
+
+.message-content pre {
+  @apply bg-gray-100 border border-gray-200 rounded-lg p-4 overflow-x-auto text-sm;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.message-content code {
+  @apply bg-gray-100 px-1 py-0.5 rounded text-sm;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.message-content pre code {
+  @apply bg-transparent p-0;
+}
+
+/* Mermaid diagram container */
+.mermaid-container {
+  @apply my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg;
+}
+
+.mermaid-container svg {
+  @apply max-w-full h-auto;
+}
+
+/* Animation for new messages */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-animate {
+  animation: slideInUp 0.3s ease-out;
+}
+
+/* Loading dots animation */
+.loading-dots {
+  @apply inline-flex space-x-1;
+}
+
+.loading-dot {
+  @apply w-2 h-2 bg-gray-400 rounded-full animate-pulse;
+  animation-duration: 1.4s;
+  animation-iteration-count: infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
