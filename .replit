@@ -1,4 +1,4 @@
-modules = ["python-3.11"]
+modules = ["python-3.11", "nodejs-20"]
 
 [nix]
 channel = "stable-25_05"
@@ -13,24 +13,20 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Flask Chat App"
+args = "Backend Server"
 
 [[workflows.workflow]]
-name = "Flask Chat App"
+name = "Backend Server"
 author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "pip install flask openai && python app.py"
+args = "cd server && node server.js"
 waitForPort = 5000
 
 [workflows.workflow.metadata]
-outputType = "webview"
+outputType = "console"
 
 [[ports]]
 localPort = 5000
 externalPort = 80
-
-[[ports]]
-localPort = 33243
-externalPort = 3000
