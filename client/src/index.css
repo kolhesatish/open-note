@@ -1,71 +1,84 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    @apply bg-white text-gray-900 font-sans;
-  }
-  
-  * {
-    @apply border-gray-200;
-  }
+/* Base styles */
+body {
+  background-color: white;
+  color: #111827;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-@layer components {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #d1d5db #f9fafb;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: #f9fafb;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #d1d5db;
-    border-radius: 3px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: #9ca3af;
-  }
+* {
+  border-color: #e5e7eb;
+  box-sizing: border-box;
+}
+
+/* Scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f9fafb;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
 }
 
 /* Custom styles for message content */
 .message-content {
-  @apply leading-relaxed;
+  line-height: 1.625;
 }
 
 .message-content p {
-  @apply mb-3;
+  margin-bottom: 0.75rem;
 }
 
 .message-content pre {
-  @apply bg-gray-100 border border-gray-200 rounded-lg p-4 overflow-x-auto text-sm;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.875rem;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .message-content code {
-  @apply bg-gray-100 px-1 py-0.5 rounded text-sm;
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
 }
 
 .message-content pre code {
-  @apply bg-transparent p-0;
+  background: transparent;
+  padding: 0;
 }
 
 /* Mermaid diagram container */
 .mermaid-container {
-  @apply my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg;
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
 }
 
 .mermaid-container svg {
-  @apply max-w-full h-auto;
+  max-width: 100%;
+  height: auto;
 }
 
 /* Animation for new messages */
@@ -86,13 +99,16 @@
 
 /* Loading dots animation */
 .loading-dots {
-  @apply inline-flex space-x-1;
+  display: inline-flex;
+  gap: 0.25rem;
 }
 
 .loading-dot {
-  @apply w-2 h-2 bg-gray-400 rounded-full animate-pulse;
-  animation-duration: 1.4s;
-  animation-iteration-count: infinite;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #9ca3af;
+  border-radius: 50%;
+  animation: pulse 1.4s infinite;
 }
 
 .loading-dot:nth-child(2) {
@@ -101,4 +117,13 @@
 
 .loading-dot:nth-child(3) {
   animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
