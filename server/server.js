@@ -4,16 +4,16 @@ const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config();
 
-const { connectDB } = require('./config/database');
+const { initDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Initialize MongoDB connection
-connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB:', err);
+// Initialize database
+initDB().catch(err => {
+  console.error('Failed to initialize database:', err);
   process.exit(1);
 });
 

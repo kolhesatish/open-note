@@ -1,107 +1,63 @@
-const mongoose = require('mongoose');
+const { pool } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-// User Schema
-const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    minlength: 3,
-    maxlength: 50
-  },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-    lowercase: true,
-    match: [/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Invalid email format']
-  },
-  passwordHash: {
-    type: String,
-    required: true
-  }
-}, {
-  timestamps: true // This adds createdAt and updatedAt automatically
-});
+class User {
+  static async create({ username, email, password }) {
+    const client = await pool.connect();
+    try {
+      // Hash password
+      const saltRounds = 12;
+      const passwordHash = await bcrypt.hash(password, saltRounds);
 
-// Pre-save middleware to hash password
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('passwordHash')) return next();
-  
-  try {
-    const saltRounds = 12;
-    this.passwordHash = await bcrypt.hash(this.passwordHash, saltRounds);
-    next();
-  } catch (error) {
-    next(error);
-  }
-});
+      const result = await client.query(
+        'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id, username, email, created_at',
+        [username, email, passwordHash]
+      );
 
-// Instance method to validate password
-userSchema.methods.validatePassword = async function(plainPassword) {
-  return bcrypt.compare(plainPassword, this.passwordHash);
-};
-
-// Static method to create user
-userSchema.statics.create = async function({ username, email, password }) {
-  try {
-    const user = new this({
-      username,
-      email,
-      passwordHash: password // Will be hashed by pre-save middleware
-    });
-    
-    const savedUser = await user.save();
-    return {
-      id: savedUser._id,
-      username: savedUser.username,
-      email: savedUser.email,
-      created_at: savedUser.createdAt
-    };
-  } catch (error) {
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
-      throw new Error(`${field.charAt(0).toUpperCase() + field.slice(1)} already exists`);
+      return result.rows[0];
+    } catch (err) {
+      if (err.code === '23505') { // Unique violation
+        if (err.constraint.includes('email')) {
+          throw new Error('Email already exists');
+        } else if (err.constraint.includes('username')) {
+          throw new Error('Username already exists');
+        }
+      }
+      throw err;
+    } finally {
+      client.release();
     }
-    throw error;
   }
-};
 
-// Static method to find by email
-userSchema.statics.findByEmail = async function(email) {
-  const user = await this.findOne({ email });
-  if (!user) return null;
-  
-  return {
-    id: user._id,
-    username: user.username,
-    email: user.email,
-    password_hash: user.passwordHash,
-    created_at: user.createdAt
-  };
-};
+  static async findByEmail(email) {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        'SELECT id, username, email, password_hash, created_at FROM users WHERE email = $1',
+        [email]
+      );
+      return result.rows[0] || null;
+    } finally {
+      client.release();
+    }
+  }
 
-// Static method to find by ID
-userSchema.statics.findById = async function(id) {
-  const user = await mongoose.model('User').findById(id);
-  if (!user) return null;
-  
-  return {
-    id: user._id,
-    username: user.username,
-    email: user.email,
-    created_at: user.createdAt
-  };
-};
+  static async findById(id) {
+    const client = await pool.connect();
+    try {
+      const result = await client.query(
+        'SELECT id, username, email, created_at FROM users WHERE id = $1',
+        [id]
+      );
+      return result.rows[0] || null;
+    } finally {
+      client.release();
+    }
+  }
 
-// Static method to validate password (static version)
-userSchema.statics.validatePassword = async function(plainPassword, hashedPassword) {
-  return bcrypt.compare(plainPassword, hashedPassword);
-};
-
-const User = mongoose.model('User', userSchema);
+  static async validatePassword(plainPassword, hashedPassword) {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+}
 
 module.exports = User;
