@@ -4,6 +4,14 @@ import { User, Bot, Copy, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
 
+// Initialize Mermaid
+mermaid.initialize({ 
+  startOnLoad: false,
+  theme: 'default',
+  securityLevel: 'loose',
+  fontFamily: 'monospace'
+});
+
 interface MessageProps {
   message: MessageType;
   onRegenerate?: () => void;
