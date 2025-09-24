@@ -68,7 +68,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 className="p-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
                 title="Stop generation"
               >
-                <Square className="h-5 w-5" />
+                {/* <Square className="h-5 w-5" /> */}
               </button>
             ) : (
               <button

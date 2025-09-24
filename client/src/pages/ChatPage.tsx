@@ -7,6 +7,10 @@ import { ChatSession, Message as MessageType, ChatSessionWithMessages } from '..
 import apiService from '../services/api';
 import { MessageSquare, Sparkles } from 'lucide-react';
 
+// Type-safe icon components
+const MessageSquareIcon = MessageSquare as any;
+const SparklesIcon = Sparkles as any;
+
 const ChatPage: React.FC = () => {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -142,34 +146,105 @@ const ChatPage: React.FC = () => {
       setError('');
       setIsSendingMessage(true);
 
-      const response = await apiService.sendMessage(currentSession.session.id, content);
-      
-      // Update current session with new messages
+      // Add user message immediately
+      const userMessage = {
+        id: Date.now(), // Temporary ID
+        chat_session_id: currentSession.session.id,
+        role: 'user' as const,
+        content: content.trim(),
+        has_diagram: false,
+        created_at: new Date().toISOString()
+      };
+
+      // Update current session with user message
       setCurrentSession(prev => {
         if (!prev) return null;
         return {
           ...prev,
-          messages: [...prev.messages, response.userMessage, response.assistantMessage]
+          messages: [...prev.messages, userMessage]
         };
       });
 
-      // Update session in the list (move to top and update message count)
-      setSessions(prevSessions => {
-        const updatedSessions = prevSessions.map(s => 
-          s.id === currentSession.session.id 
-            ? { ...s, message_count: s.message_count + 2, updated_at: new Date().toISOString() }
-            : s
-        );
-        
-        // Move current session to top
-        const currentSessionIndex = updatedSessions.findIndex(s => s.id === currentSession.session.id);
-        if (currentSessionIndex > 0) {
-          const [currentSessionItem] = updatedSessions.splice(currentSessionIndex, 1);
-          updatedSessions.unshift(currentSessionItem);
-        }
-        
-        return updatedSessions;
+      // Create a temporary assistant message for streaming
+      let assistantMessage = {
+        id: Date.now() + 1, // Temporary ID
+        chat_session_id: currentSession.session.id,
+        role: 'assistant' as const,
+        content: '',
+        has_diagram: false,
+        created_at: new Date().toISOString()
+      };
+
+      // Add empty assistant message for streaming
+      setCurrentSession(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          messages: [...prev.messages, assistantMessage]
+        };
       });
+
+      // Start streaming
+      console.log('Starting streaming for session:', currentSession.session.id);
+      await apiService.sendMessageStream(
+        currentSession.session.id,
+        content,
+        // onChunk
+        (chunk: string) => {
+          console.log('Received chunk in ChatPage:', chunk.substring(0, 50) + '...');
+          setCurrentSession(prev => {
+            if (!prev) return null;
+            const updatedMessages = [...prev.messages];
+            const lastMessage = updatedMessages[updatedMessages.length - 1];
+            if (lastMessage && lastMessage.role === 'assistant') {
+              updatedMessages[updatedMessages.length - 1] = {
+                ...lastMessage,
+                content: lastMessage.content + chunk
+              };
+            }
+            return {
+              ...prev,
+              messages: updatedMessages
+            };
+          });
+        },
+        // onComplete
+        (message: MessageType) => {
+          console.log('Streaming completed with message:', message);
+          setCurrentSession(prev => {
+            if (!prev) return null;
+            const updatedMessages = [...prev.messages];
+            updatedMessages[updatedMessages.length - 1] = message;
+            return {
+              ...prev,
+              messages: updatedMessages
+            };
+          });
+
+          // Update session in the list
+          setSessions(prevSessions => {
+            const updatedSessions = prevSessions.map(s => 
+              s.id === currentSession.session.id 
+                ? { ...s, message_count: s.message_count + 2, updated_at: new Date().toISOString() }
+                : s
+            );
+            
+            // Move current session to top
+            const currentSessionIndex = updatedSessions.findIndex(s => s.id === currentSession.session.id);
+            if (currentSessionIndex > 0) {
+              const [currentSessionItem] = updatedSessions.splice(currentSessionIndex, 1);
+              updatedSessions.unshift(currentSessionItem);
+            }
+            
+            return updatedSessions;
+          });
+        },
+        // onError
+        (error: string) => {
+          setError(error);
+          console.error('Streaming error:', error);
+        }
+      );
 
     } catch (err: any) {
       setError('Failed to send message');
@@ -234,13 +309,13 @@ const ChatPage: React.FC = () => {
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <MessageSquare className="h-6 w-6 text-primary-600" />
+              <MessageSquareIcon className="h-6 w-6 text-primary-600" />
               <h1 className="text-xl font-semibold text-gray-900">
                 {currentSession?.session.title || 'ChatGPT Clone'}
               </h1>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <Sparkles className="h-4 w-4" />
+              <SparklesIcon className="h-4 w-4" />
               <span>AI Assistant</span>
             </div>
           </div>
@@ -260,7 +335,7 @@ const ChatPage: React.FC = () => {
         >
           {!currentSession ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <MessageSquare className="h-16 w-16 text-gray-300 mb-4" />
+              <MessageSquareIcon className="h-16 w-16 text-gray-300 mb-4" />
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                 Welcome to ChatGPT Clone
               </h2>
@@ -281,7 +356,7 @@ const ChatPage: React.FC = () => {
             </div>
           ) : currentSession.messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
-              <Sparkles className="h-16 w-16 text-gray-300 mb-4" />
+              <SparklesIcon className="h-16 w-16 text-gray-300 mb-4" />
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">
                 Ready to help!
               </h2>
@@ -319,28 +394,11 @@ const ChatPage: React.FC = () => {
                     message={message}
                     onRegenerate={isLastAssistantMessage ? handleRegenerateResponse : undefined}
                     isLastAssistantMessage={isLastAssistantMessage}
+                    isStreaming={isLastAssistantMessage && isSendingMessage && message.content === ''}
                   />
                 );
               })}
               
-              {/* Loading indicator for new messages */}
-              {isSendingMessage && (
-                <div className="flex justify-start mb-6">
-                  <div className="flex items-start space-x-3">
-                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
-                      <Sparkles className="h-4 w-4" />
-                    </div>
-                    <div className="bg-white border border-gray-200 rounded-lg rounded-bl-sm shadow-sm p-4">
-                      <div className="loading-dots">
-                        <div className="loading-dot"></div>
-                        <div className="loading-dot"></div>
-                        <div className="loading-dot"></div>
-                      </div>
-                      <div className="text-sm text-gray-500 mt-2">AI is thinking...</div>
-                    </div>
-                  </div>
-                </div>
-              )}
               
               <div ref={messagesEndRef} />
             </div>

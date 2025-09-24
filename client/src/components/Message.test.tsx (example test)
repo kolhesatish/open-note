@@ -1,0 +1,8 @@
+const { render, screen } = require('@testing-library/react');
+const Message = require('./Message');
+
+test('renders message component', () => {
+    render(<Message />);
+    const messageElement = screen.getByText(/your message text/i);
+    expect(messageElement).toBeInTheDocument();
+});

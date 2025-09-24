@@ -6,7 +6,7 @@ import {
   ChatSession, 
   ChatSessionWithMessages,
   SendMessageResponse,
-  Message
+  Message as MessageType
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -96,8 +96,85 @@ class ApiService {
     return response.data;
   }
 
-  async regenerateResponse(sessionId: number): Promise<{ assistantMessage: Message }> {
-    const response = await this.api.post<{ assistantMessage: Message }>(`/chat/sessions/${sessionId}/regenerate`);
+  async sendMessageStream(
+    sessionId: number, 
+    content: string,
+    onChunk: (chunk: string) => void,
+    onComplete: (message: MessageType) => void,
+    onError: (error: string) => void
+  ): Promise<void> {
+    const token = this.getAuthToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Starting streaming request to:', `${API_BASE_URL}/chat/sessions/${sessionId}/messages/stream`);
+    
+    const response = await fetch(`${API_BASE_URL}/chat/sessions/${sessionId}/messages/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ content }),
+    });
+
+    console.log('Streaming response status:', response.status);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body reader available');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              console.log('Received SSE data:', data);
+              
+              switch (data.type) {
+                case 'chunk':
+                  console.log('Processing chunk:', data.content.substring(0, 50) + '...');
+                  onChunk(data.content);
+                  break;
+                case 'complete':
+                  console.log('Streaming complete:', data.data);
+                  onComplete(data.data);
+                  break;
+                case 'error':
+                  console.error('Streaming error:', data.error);
+                  onError(data.error);
+                  break;
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError);
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  }
+
+  async regenerateResponse(sessionId: number): Promise<{ assistantMessage: MessageType }> {
+    const response = await this.api.post<{ assistantMessage: MessageType }>(`/chat/sessions/${sessionId}/regenerate`);
     return response.data;
   }
 

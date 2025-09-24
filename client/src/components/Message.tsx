@@ -4,6 +4,12 @@ import { User, Bot, Copy, RotateCcw } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import mermaid from 'mermaid';
 
+// Type-safe icon components
+const UserIcon = User as any;
+const BotIcon = Bot as any;
+const CopyIcon = Copy as any;
+const RotateCcwIcon = RotateCcw as any;
+
 // Initialize Mermaid
 mermaid.initialize({ 
   startOnLoad: false,
@@ -16,40 +22,62 @@ interface MessageProps {
   message: MessageType;
   onRegenerate?: () => void;
   isLastAssistantMessage?: boolean;
+  isStreaming?: boolean;
 }
 
 const Message: React.FC<MessageProps> = ({ 
   message, 
   onRegenerate, 
-  isLastAssistantMessage = false 
+  isLastAssistantMessage = false,
+  isStreaming = false
 }) => {
   const mermaidRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (message.has_diagram && mermaidRef.current) {
-      const mermaidBlocks = mermaidRef.current.querySelectorAll('.mermaid-diagram');
-      mermaidBlocks.forEach((block, index) => {
-        const element = block as HTMLElement;
-        const code = element.textContent || '';
+      console.log('Processing diagram for message:', message.id);
+      console.log('Message content:', message.content);
+      
+      // Look for mermaid code in the original content
+      const mermaidRegex = /```mermaid\s*\n?([\s\S]*?)\n?```/g;
+      let match;
+      let index = 0;
+      
+      while ((match = mermaidRegex.exec(message.content)) !== null) {
+        const code = match[1].trim();
+        console.log('Found mermaid code:', code);
         
-        if (code.trim()) {
+        if (code) {
+          const container = document.createElement('div');
+          container.className = 'mermaid-container';
+          container.innerHTML = `<div class="mermaid-diagram">${code}</div>`;
+          mermaidRef.current.appendChild(container);
+          
+          const element = container.querySelector('.mermaid-diagram') as HTMLElement;
           const uniqueId = `mermaid-${message.id}-${index}`;
           element.id = uniqueId;
           
+          console.log('Rendering mermaid with ID:', uniqueId);
+          
           try {
             mermaid.render(`${uniqueId}-svg`, code).then((result) => {
+              console.log('Mermaid rendered successfully');
               element.innerHTML = result.svg;
             }).catch((error) => {
               console.error('Mermaid rendering error:', error);
-              element.innerHTML = `<pre class="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">Error rendering diagram: ${error.message}</pre>`;
+              const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+              element.innerHTML = `<pre class="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">Error rendering diagram: ${errorMessage}</pre>`;
             });
           } catch (error) {
             console.error('Mermaid error:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            element.innerHTML = `<pre class="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">Error rendering diagram: ${errorMessage}</pre>`;
           }
+          index++;
         }
-      });
+      }
     }
-  }, [message.has_diagram, message.id]);
+  }, [message.has_diagram, message.id, message.content]);
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -60,24 +88,24 @@ const Message: React.FC<MessageProps> = ({
   };
 
   const formatMessageContent = (content: string) => {
-    // Extract mermaid diagrams
-    const mermaidRegex = /```mermaid\n([\s\S]*?)\n```/g;
-    let processedContent = content;
-    const diagrams: string[] = [];
-
-    let match;
-    while ((match = mermaidRegex.exec(content)) !== null) {
-      diagrams.push(match[1]);
-      processedContent = processedContent.replace(
-        match[0],
-        `<div class="mermaid-container"><div class="mermaid-diagram">${match[1]}</div></div>`
-      );
-    }
-
-    return processedContent;
+    // Don't process mermaid diagrams here - let the useEffect handle them
+    // Just return the original content for ReactMarkdown to process
+    return content;
   };
 
   const isUser = message.role === 'user';
+
+  // Typing indicator component
+  const TypingIndicator = () => (
+    <div className="flex items-center space-x-1 text-gray-400">
+      <div className="flex space-x-1">
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+      </div>
+      <span className="text-xs ml-2">AI is typing...</span>
+    </div>
+  );
 
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-6 message-animate`}>
@@ -88,7 +116,7 @@ const Message: React.FC<MessageProps> = ({
             ? 'bg-primary-600 text-white' 
             : 'bg-gray-200 text-gray-600'
         }`}>
-          {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
+          {isUser ? <UserIcon className="h-4 w-4" /> : <BotIcon className="h-4 w-4" />}
         </div>
 
         {/* Message Content */}
@@ -121,20 +149,17 @@ const Message: React.FC<MessageProps> = ({
                       </code>
                     );
                   },
-                  div: ({ children, className, ...props }) => {
-                    if (className === 'mermaid-container') {
-                      return (
-                        <div className="my-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                          {children}
-                        </div>
-                      );
-                    }
-                    return <div {...props}>{children}</div>;
-                  }
                 }}
               >
                 {formatMessageContent(message.content)}
               </ReactMarkdown>
+              
+              {/* Show typing indicator for streaming assistant messages */}
+              {!isUser && isStreaming && message.content === '' && (
+                <div className="mt-2">
+                  <TypingIndicator />
+                </div>
+              )}
             </div>
 
             {/* Message Actions */}
@@ -158,7 +183,7 @@ const Message: React.FC<MessageProps> = ({
                   }`}
                   title="Copy message"
                 >
-                  <Copy className="h-3 w-3" />
+                  <CopyIcon className="h-3 w-3" />
                 </button>
                 
                 {!isUser && isLastAssistantMessage && onRegenerate && (
@@ -167,7 +192,7 @@ const Message: React.FC<MessageProps> = ({
                     className="p-1 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                     title="Regenerate response"
                   >
-                    <RotateCcw className="h-3 w-3" />
+                    <RotateCcwIcon className="h-3 w-3" />
                   </button>
                 )}
               </div>
