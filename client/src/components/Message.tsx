@@ -10,12 +10,22 @@ const BotIcon = Bot as any;
 const CopyIcon = Copy as any;
 const RotateCcwIcon = RotateCcw as any;
 
-// Initialize Mermaid
+// Initialize Mermaid with better configuration
 mermaid.initialize({ 
   startOnLoad: false,
   theme: 'default',
   securityLevel: 'loose',
-  fontFamily: 'monospace'
+  fontFamily: 'monospace',
+  flowchart: {
+    useMaxWidth: true,
+    htmlLabels: true
+  },
+  sequence: {
+    useMaxWidth: true
+  },
+  gantt: {
+    useMaxWidth: true
+  }
 });
 
 interface MessageProps {
@@ -32,51 +42,88 @@ const Message: React.FC<MessageProps> = ({
   isStreaming = false
 }) => {
   const mermaidRef = useRef<HTMLDivElement>(null);
+  const processedMessageId = useRef<string>('');
 
   useEffect(() => {
-    if (message.has_diagram && mermaidRef.current) {
+    // Only process if this is a new message and has diagrams
+    if (message.has_diagram && mermaidRef.current && processedMessageId.current !== String(message.id)) {
       console.log('Processing diagram for message:', message.id);
-      console.log('Message content:', message.content);
       
-      // Look for mermaid code in the original content
-      const mermaidRegex = /```mermaid\s*\n?([\s\S]*?)\n?```/g;
+      // Clear any existing content first
+      mermaidRef.current.innerHTML = '';
+      
+      // Mark this message as being processed
+      processedMessageId.current = String(message.id);
+      
+      // Look for mermaid code blocks in the content
+      const mermaidRegex = /```mermaid\s*\n([\s\S]*?)\n```/g;
+      const matches: RegExpExecArray[] = [];
       let match;
-      let index = 0;
-      
       while ((match = mermaidRegex.exec(message.content)) !== null) {
+        matches.push(match);
+      }
+      
+      if (matches.length === 0) {
+        mermaidRef.current.innerHTML = `
+          <div class="bg-yellow-50 border border-yellow-200 text-yellow-700 p-3 rounded text-sm">
+            <strong>Note:</strong> No valid Mermaid diagrams found in this message.
+          </div>
+        `;
+        return;
+      }
+      
+      matches.forEach((match, index) => {
         const code = match[1].trim();
         console.log('Found mermaid code:', code);
         
-        if (code) {
-          const container = document.createElement('div');
-          container.className = 'mermaid-container';
-          container.innerHTML = `<div class="mermaid-diagram">${code}</div>`;
-          mermaidRef.current.appendChild(container);
-          
-          const element = container.querySelector('.mermaid-diagram') as HTMLElement;
+        if (code && code.length > 0) {
           const uniqueId = `mermaid-${message.id}-${index}`;
-          element.id = uniqueId;
+          
+          // Create container for this diagram
+          const container = document.createElement('div');
+          container.className = 'mermaid-container mb-4';
+          container.innerHTML = `<div id="${uniqueId}" class="mermaid-diagram bg-white p-4 border rounded-lg overflow-x-auto"></div>`;
+          
+          if (mermaidRef.current) {
+            mermaidRef.current.appendChild(container);
+          }
+          
+          const element = container.querySelector(`#${uniqueId}`) as HTMLElement;
           
           console.log('Rendering mermaid with ID:', uniqueId);
           
-          try {
-            mermaid.render(`${uniqueId}-svg`, code).then((result) => {
-              console.log('Mermaid rendered successfully');
-              element.innerHTML = result.svg;
-            }).catch((error) => {
-              console.error('Mermaid rendering error:', error);
-              const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-              element.innerHTML = `<pre class="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">Error rendering diagram: ${errorMessage}</pre>`;
+          // Render the mermaid diagram
+          mermaid.render(`${uniqueId}-svg`, code)
+            .then((result) => {
+              console.log('Mermaid rendered successfully for:', uniqueId);
+              if (element && element.parentNode) {
+                element.innerHTML = result.svg;
+              }
+            })
+            .catch((error) => {
+              console.error('Mermaid rendering error for', uniqueId, ':', error);
+              if (element && element.parentNode) {
+                element.innerHTML = `
+                  <div class="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">
+                    <strong>Error rendering diagram:</strong> ${error.message || 'Unknown error occurred'}
+                    <details class="mt-2">
+                      <summary class="cursor-pointer text-xs">Show diagram code</summary>
+                      <pre class="mt-1 text-xs bg-gray-100 p-2 rounded overflow-x-auto">${code}</pre>
+                    </details>
+                  </div>
+                `;
+              }
             });
-          } catch (error) {
-            console.error('Mermaid error:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            element.innerHTML = `<pre class="bg-red-50 border border-red-200 text-red-700 p-3 rounded text-sm">Error rendering diagram: ${errorMessage}</pre>`;
-          }
-          index++;
         }
-      }
+      });
     }
+    
+    // Reset processed message ID when message ID changes
+    return () => {
+      if (processedMessageId.current !== String(message.id)) {
+        processedMessageId.current = '';
+      }
+    };
   }, [message.has_diagram, message.id, message.content]);
 
   const copyToClipboard = async (text: string) => {
@@ -88,8 +135,10 @@ const Message: React.FC<MessageProps> = ({
   };
 
   const formatMessageContent = (content: string) => {
-    // Don't process mermaid diagrams here - let the useEffect handle them
-    // Just return the original content for ReactMarkdown to process
+    // Remove mermaid code blocks from content since they're handled separately
+    if (message.has_diagram) {
+      return content.replace(/```mermaid\s*\n[\s\S]*?\n```/g, '');
+    }
     return content;
   };
 
@@ -126,33 +175,36 @@ const Message: React.FC<MessageProps> = ({
               ? 'bg-primary-600 text-white rounded-br-sm' 
               : 'bg-white border border-gray-200 rounded-bl-sm shadow-sm'
           }`}>
-            <div className="message-content" ref={mermaidRef}>
-              <ReactMarkdown
-                components={{
-                  pre: ({ children, ...props }) => (
-                    <pre {...props} className={`${isUser ? 'bg-primary-700 border-primary-500' : 'bg-gray-100 border-gray-200'} border rounded-lg p-3 overflow-x-auto text-sm`}>
-                      {children}
-                    </pre>
-                  ),
-                  code: ({ children, className, ...props }) => {
-                    const isInline = !className;
-                    return (
-                      <code 
-                        {...props} 
-                        className={`${
-                          isInline 
-                            ? `${isUser ? 'bg-primary-700' : 'bg-gray-100'} px-1 py-0.5 rounded text-sm` 
-                            : ''
-                        }`}
-                      >
+            <div className="message-content">
+              {/* Regular markdown content */}
+              {(formatMessageContent(message.content).trim() || isStreaming) && (
+                <ReactMarkdown
+                  components={{
+                    pre: ({ children, ...props }) => (
+                      <pre {...props} className={`${isUser ? 'bg-primary-700 border-primary-500' : 'bg-gray-100 border-gray-200'} border rounded-lg p-3 overflow-x-auto text-sm`}>
                         {children}
-                      </code>
-                    );
-                  },
-                }}
-              >
-                {formatMessageContent(message.content)}
-              </ReactMarkdown>
+                      </pre>
+                    ),
+                    code: ({ children, className, ...props }) => {
+                      const isInline = !className;
+                      return (
+                        <code 
+                          {...props} 
+                          className={`${
+                            isInline 
+                              ? `${isUser ? 'bg-primary-700' : 'bg-gray-100'} px-1 py-0.5 rounded text-sm` 
+                              : ''
+                          }`}
+                        >
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {formatMessageContent(message.content) || ''}
+                </ReactMarkdown>
+              )}
               
               {/* Show typing indicator for streaming assistant messages */}
               {!isUser && isStreaming && message.content === '' && (
@@ -198,6 +250,11 @@ const Message: React.FC<MessageProps> = ({
               </div>
             </div>
           </div>
+          
+          {/* Mermaid diagrams rendered outside message bubble for better spacing */}
+          {message.has_diagram && !isUser && (
+            <div className="mt-3" ref={mermaidRef}></div>
+          )}
         </div>
       </div>
     </div>

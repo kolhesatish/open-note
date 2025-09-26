@@ -47,6 +47,22 @@ class Message {
     }
   }
 
+  static async update(id, updates) {
+    const client = await pool.connect();
+    try {
+      const setClause = Object.keys(updates).map((key, index) => `${key} = $${index + 2}`).join(', ');
+      const values = [id, ...Object.values(updates)];
+      
+      const result = await client.query(
+        `UPDATE messages SET ${setClause} WHERE id = $1 RETURNING *`,
+        values
+      );
+      return result.rows[0] || null;
+    } finally {
+      client.release();
+    }
+  }
+
   static async delete(id, chatSessionId) {
     const client = await pool.connect();
     try {
