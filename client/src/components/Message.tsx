@@ -10,7 +10,6 @@ const BotIcon = Bot as any;
 const CopyIcon = Copy as any;
 const RotateCcwIcon = RotateCcw as any;
 
-
 mermaid.initialize({
   startOnLoad: false,
   theme: 'default',
@@ -34,6 +33,7 @@ interface MessageProps {
   isLastAssistantMessage?: boolean;
   isStreaming?: boolean;
 }
+
 const MermaidBlock: React.FC<{ code: string }> = ({ code }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   // Stable id to avoid double-render in StrictMode
@@ -71,7 +71,7 @@ const MermaidBlock: React.FC<{ code: string }> = ({ code }) => {
 
   return <div ref={containerRef} className="mermaid-container" />;
 };
-=======
+
 const Message: React.FC<MessageProps> = ({ 
   message, 
   onRegenerate, 
@@ -163,12 +163,6 @@ const Message: React.FC<MessageProps> = ({
     };
   }, [message.has_diagram, message.id, message.content]);
 
-const Message: React.FC<MessageProps> = ({
-  message,
-  onRegenerate,
-  isLastAssistantMessage = false,
-  isStreaming = false,
-}) => {
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -213,60 +207,6 @@ const Message: React.FC<MessageProps> = ({
 
         {/* Message Content */}
         <div className={`flex-1 ${isUser ? 'text-right' : 'text-left'}`}>
-          <div
-            className={`inline-block max-w-full p-4 rounded-lg ${
-              isUser
-                ? 'bg-primary-600 text-white rounded-br-sm'
-                : 'bg-white border border-gray-200 rounded-bl-sm shadow-sm'
-            }`}
-          >
-            <div className="message-content">
-              <ReactMarkdown
-                components={{
-                  pre: ({ children, ...props }) => (
-                    <pre
-                      {...props}
-                      className={`${
-                        isUser
-                          ? 'bg-primary-700 border-primary-500'
-                          : 'bg-gray-100 border-gray-200'
-                      } border rounded-lg p-3 overflow-x-auto text-sm`}
-                    >
-                      {children}
-                    </pre>
-                  ),
-                  code: ({ children, className, ...props }) => {
-                    const codeText = String(children ?? '');
-                    const isBlock = !!className;
-                    const isMermaid = /language-mermaid/.test(className || '');
-
-                    if (isBlock && isMermaid) {
-                      return <MermaidBlock code={codeText} />;
-                    }
-
-                    const isInline = !isBlock;
-                    return (
-                      <code
-                        {...props}
-                        className={
-                          isInline
-                            ? `${
-                                isUser
-                                  ? 'bg-primary-700'
-                                  : 'bg-gray-100'
-                              } px-1 py-0.5 rounded text-sm`
-                            : ''
-                        }
-                      >
-                        {children}
-                      </code>
-                    );
-                  },
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
-
           <div className={`inline-block max-w-full p-4 rounded-lg ${
             isUser 
               ? 'bg-primary-600 text-white rounded-br-sm' 
@@ -283,7 +223,15 @@ const Message: React.FC<MessageProps> = ({
                       </pre>
                     ),
                     code: ({ children, className, ...props }) => {
-                      const isInline = !className;
+                      const codeText = String(children ?? '');
+                      const isBlock = !!className;
+                      const isMermaid = /language-mermaid/.test(className || '');
+
+                      if (isBlock && isMermaid) {
+                        return <MermaidBlock code={codeText} />;
+                      }
+
+                      const isInline = !isBlock;
                       return (
                         <code 
                           {...props} 
