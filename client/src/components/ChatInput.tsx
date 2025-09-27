@@ -43,7 +43,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="border-t border-surface bg-app p-4">
+    <div className="border-t border-gray-200 bg-white p-4">
       <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
         <div className="flex items-end space-x-3">
           <div className="flex-1 relative">
@@ -54,7 +54,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               onKeyDown={handleKeyDown}
               placeholder={disabled ? "Select or create a chat to start messaging..." : "Type your message here... (Shift+Enter for new line)"}
               disabled={disabled || isLoading}
-              className="w-full px-4 py-3 border border-surface bg-surface text-on-dark rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-800 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
               rows={1}
               style={{ minHeight: '48px', maxHeight: '120px' }}
             />

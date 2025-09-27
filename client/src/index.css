@@ -330,20 +330,3 @@ body {
     transform: rotate(360deg);
   }
 }
-
-/* Dark theme utilities */
-.bg-app { background-color: rgb(33, 33, 33); }
-.bg-surface { background-color: #2a2a2a; }
-.border-surface { border-color: #3a3a3a; }
-.text-on-dark { color: #f3f3f3; }
-.text-muted-dark { color: #afafaf; }
-
-/* Dark scrollbar */
-.scrollbar-dark { scrollbar-color: #4a4a4a #1f1f1f; }
-.scrollbar-dark::-webkit-scrollbar-track { background: #1f1f1f; }
-.scrollbar-dark::-webkit-scrollbar-thumb { background-color: #4a4a4a; }
-.scrollbar-dark::-webkit-scrollbar-thumb:hover { background-color: #6a6a6a; }
-
-/* Hover helpers for dark tokens */
-.hover\:bg-surface:hover { background-color: #2a2a2a; }
-.hover\:text-on-dark:hover { color: #f3f3f3; }
