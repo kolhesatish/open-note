@@ -70,9 +70,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <div className="w-64 bg-app text-on-dark flex flex-col h-full">
+    <div className="w-64 bg-gray-900 text-white flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b border-surface">
+      <div className="p-4 border-b border-gray-700">
         <button
           onClick={onNewChat}
           className="w-full flex items-center justify-center space-x-2 bg-primary-600 hover:bg-primary-700 text-white py-2 px-4 rounded-lg transition-colors"
@@ -183,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* User Info and Logout */}
-      <div className="p-4 border-t border-surface">
+      <div className="p-4 border-t border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
