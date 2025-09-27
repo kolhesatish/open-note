@@ -291,7 +291,7 @@ const ChatPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-app">
       {/* Sidebar */}
       <Sidebar
         sessions={sessions}
@@ -306,15 +306,15 @@ const ChatPage: React.FC = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div className="bg-app border-b border-surface px-6 py-4 text-on-dark">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <MessageSquareIcon className="h-6 w-6 text-primary-600" />
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl font-semibold text-on-dark">
                 {currentSession?.session.title || 'ChatGPT Clone'}
               </h1>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <div className="flex items-center space-x-2 text-sm text-muted-dark">
               <SparklesIcon className="h-4 w-4" />
               <span>AI Assistant</span>
             </div>
@@ -331,15 +331,15 @@ const ChatPage: React.FC = () => {
         {/* Messages Area */}
         <div 
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4"
+          className="flex-1 overflow-y-auto scrollbar-thin scrollbar-dark px-6 py-4"
         >
           {!currentSession ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquareIcon className="h-16 w-16 text-gray-300 mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-2xl font-semibold text-on-dark mb-2">
                 Welcome to ChatGPT Clone
               </h2>
-              <p className="text-gray-600 mb-6 max-w-md">
+              <p className="text-muted-dark mb-6 max-w-md">
                 Start a conversation with our AI assistant. Ask questions, request explanations, 
                 or even generate diagrams and charts!
               </p>
@@ -357,10 +357,10 @@ const ChatPage: React.FC = () => {
           ) : currentSession.messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
               <SparklesIcon className="h-16 w-16 text-gray-300 mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-2xl font-semibold text-on-dark mb-2">
                 Ready to help!
               </h2>
-              <p className="text-gray-600 mb-6 max-w-md">
+              <p className="text-muted-dark mb-6 max-w-md">
                 I can help you with explanations, create diagrams, write code, and much more. 
                 What would you like to explore today?
               </p>
@@ -374,7 +374,7 @@ const ChatPage: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => handleSendMessage(suggestion)}
-                    className="p-3 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors text-left"
+                    className="p-3 bg-surface border border-surface rounded-lg hover:border-primary-300 hover:bg-app transition-colors text-left text-on-dark"
                   >
                     {suggestion}
                   </button>
