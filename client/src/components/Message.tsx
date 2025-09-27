@@ -119,7 +119,7 @@ const Message: React.FC<MessageProps> = ({
           // Create container for this diagram
           const container = document.createElement('div');
           container.className = 'mermaid-container mb-4';
-          container.innerHTML = `<div id="${uniqueId}" class="mermaid-diagram bg-white p-4 border rounded-lg overflow-x-auto"></div>`;
+          container.innerHTML = `<div id="${uniqueId}" class="mermaid-diagram bg-surface p-4 border border-surface rounded-lg overflow-x-auto"></div>`;
           
           if (mermaidRef.current) {
             mermaidRef.current.appendChild(container);
@@ -145,7 +145,7 @@ const Message: React.FC<MessageProps> = ({
                     <strong>Error rendering diagram:</strong> ${error.message || 'Unknown error occurred'}
                     <details class="mt-2">
                       <summary class="cursor-pointer text-xs">Show diagram code</summary>
-                      <pre class="mt-1 text-xs bg-gray-100 p-2 rounded overflow-x-auto">${code}</pre>
+                      <pre class="mt-1 text-xs bg-app p-2 rounded overflow-x-auto">${code}</pre>
                     </details>
                   </div>
                 `;
@@ -210,7 +210,7 @@ const Message: React.FC<MessageProps> = ({
           <div className={`inline-block max-w-full p-4 rounded-lg ${
             isUser 
               ? 'bg-primary-600 text-white rounded-br-sm' 
-              : 'bg-white border border-gray-200 rounded-bl-sm shadow-sm'
+              : 'bg-surface border border-surface text-on-dark rounded-bl-sm shadow-sm'
           }`}>
             <div className="message-content">
               {/* Regular markdown content */}
@@ -218,7 +218,7 @@ const Message: React.FC<MessageProps> = ({
                 <ReactMarkdown
                   components={{
                     pre: ({ children, ...props }) => (
-                      <pre {...props} className={`${isUser ? 'bg-primary-700 border-primary-500' : 'bg-gray-100 border-gray-200'} border rounded-lg p-3 overflow-x-auto text-sm`}>
+                      <pre {...props} className={`${isUser ? 'bg-primary-700 border-primary-500' : 'bg-app border-surface'} border rounded-lg p-3 overflow-x-auto text-sm`}>
                         {children}
                       </pre>
                     ),
@@ -237,7 +237,7 @@ const Message: React.FC<MessageProps> = ({
                           {...props} 
                           className={`${
                             isInline 
-                              ? `${isUser ? 'bg-primary-700' : 'bg-gray-100'} px-1 py-0.5 rounded text-sm` 
+                              ? `${isUser ? 'bg-primary-700' : 'bg-app'} px-1 py-0.5 rounded text-sm` 
                               : ''
                           }`}
                         >
@@ -262,10 +262,10 @@ const Message: React.FC<MessageProps> = ({
             {/* Message Actions */}
             <div
               className={`flex items-center justify-between mt-3 pt-2 border-t ${
-                isUser ? 'border-primary-500' : 'border-gray-200'
+                isUser ? 'border-primary-500' : 'border-surface'
               }`}
             >
-              <span className={`text-xs ${isUser ? 'text-primary-100' : 'text-gray-500'}`}>
+              <span className={`text-xs ${isUser ? 'text-primary-100' : 'text-muted-dark'}`}>
                 {new Date(message.created_at).toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit',
@@ -278,7 +278,7 @@ const Message: React.FC<MessageProps> = ({
                   className={`p-1 rounded hover:bg-opacity-80 transition-colors ${
                     isUser
                       ? 'text-primary-100 hover:bg-primary-700'
-                      : 'text-gray-400 hover:bg-gray-100'
+                      : 'text-muted-dark hover:bg-surface hover:text-on-dark'
                   }`}
                   title="Copy message"
                 >
@@ -288,7 +288,7 @@ const Message: React.FC<MessageProps> = ({
                 {!isUser && isLastAssistantMessage && onRegenerate && (
                   <button
                     onClick={onRegenerate}
-                    className="p-1 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    className="p-1 rounded text-muted-dark hover:bg-surface hover:text-on-dark transition-colors"
                     title="Regenerate response"
                   >
                     <RotateCcwIcon className="h-3 w-3" />
