@@ -19,6 +19,18 @@ const ChatPage: React.FC = () => {
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [error, setError] = useState<string>('');
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setVisible(false);
+        setTimeout(() => setError(''), 500); 
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -290,8 +302,81 @@ const ChatPage: React.FC = () => {
     return -1;
   };
 
+  // Premium styling
+  const containerStyle: React.CSSProperties = {
+    display: 'flex',
+    height: '100vh',
+    backgroundColor: '#ffffff'
+  };
+
+  const headerStyle: React.CSSProperties = {
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #e5e7eb',
+    padding: '16px 24px'
+  };
+
+  const errorStyle: React.CSSProperties = {
+    margin: '16px 24px 0',
+    padding: '12px',
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca',
+    color: '#b91c1c',
+    borderRadius: '8px',
+    fontSize: '14px',
+    transition: 'opacity 0.5s ease-in-out'
+  };
+
+  const messagesAreaStyle: React.CSSProperties = {
+    flex: 1,
+    overflowY: 'auto',
+    padding: '24px',
+    backgroundColor: '#ffffff'
+  };
+
+  const emptyStateStyle: React.CSSProperties = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '100%',
+    textAlign: 'center'
+  };
+
+  const primaryButtonStyle: React.CSSProperties = {
+    backgroundColor: '#111827',
+    color: '#ffffff',
+    padding: '12px 24px',
+    borderRadius: '8px',
+    border: 'none',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease-in-out'
+  };
+
+  const suggestionButtonStyle: React.CSSProperties = {
+    padding: '12px',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '8px',
+    textAlign: 'left',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease-in-out',
+    fontSize: '14px',
+    color: '#374151'
+  };
+
+  const loadingSpinnerStyle: React.CSSProperties = {
+    width: '48px',
+    height: '48px',
+    border: '3px solid #e5e7eb',
+    borderTop: '3px solid #111827',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  };
+
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div style={containerStyle}>
       {/* Sidebar */}
       <Sidebar
         sessions={sessions}
@@ -306,16 +391,16 @@ const ChatPage: React.FC = () => {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4">
+        <div style={headerStyle}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <MessageSquareIcon className="h-6 w-6 text-primary-600" />
-              <h1 className="text-xl font-semibold text-gray-900">
+            <div className="flex items-center" style={{ gap: '12px' }}>
+              <MessageSquareIcon size={24} style={{ color: '#6b7280' }} />
+              <h1 className="text-xl font-semibold" style={{ color: '#111827' }}>
                 {currentSession?.session.title || 'ChatGPT Clone'}
               </h1>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-500">
-              <SparklesIcon className="h-4 w-4" />
+            <div className="flex items-center text-sm" style={{ gap: '8px', color: '#6b7280' }}>
+              <SparklesIcon size={16} />
               <span>AI Assistant</span>
             </div>
           </div>
@@ -323,7 +408,12 @@ const ChatPage: React.FC = () => {
 
         {/* Error Message */}
         {error && (
-          <div className="mx-6 mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          <div
+            style={{
+              ...errorStyle,
+              opacity: visible ? 1 : 0
+            }}
+          >
             {error}
           </div>
         )}
@@ -331,40 +421,47 @@ const ChatPage: React.FC = () => {
         {/* Messages Area */}
         <div 
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4"
+          className="flex-1 overflow-y-auto scrollbar-thin"
+          style={messagesAreaStyle}
         >
           {!currentSession ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <MessageSquareIcon className="h-16 w-16 text-gray-300 mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <div style={emptyStateStyle}>
+              <MessageSquareIcon size={64} style={{ color: '#d1d5db', marginBottom: '16px' }} />
+              <h2 className="text-2xl font-semibold mb-2" style={{ color: '#111827' }}>
                 Welcome to ChatGPT Clone
               </h2>
-              <p className="text-gray-600 mb-6 max-w-md">
+              <p style={{ color: '#6b7280', marginBottom: '24px', maxWidth: '448px', lineHeight: '1.5' }}>
                 Start a conversation with our AI assistant. Ask questions, request explanations, 
                 or even generate diagrams and charts!
               </p>
               <button
                 onClick={createNewChat}
-                className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 transition-colors"
+                style={primaryButtonStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1f2937';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#111827';
+                }}
               >
                 Start New Chat
               </button>
             </div>
           ) : isLoadingMessages ? (
             <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              <div style={loadingSpinnerStyle}></div>
             </div>
           ) : currentSession.messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center">
-              <SparklesIcon className="h-16 w-16 text-gray-300 mb-4" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+            <div style={emptyStateStyle}>
+              <SparklesIcon size={64} style={{ color: '#d1d5db', marginBottom: '16px' }} />
+              <h2 className="text-2xl font-semibold mb-2" style={{ color: '#111827' }}>
                 Ready to help!
               </h2>
-              <p className="text-gray-600 mb-6 max-w-md">
+              <p style={{ color: '#6b7280', marginBottom: '24px', maxWidth: '448px', lineHeight: '1.5' }}>
                 I can help you with explanations, create diagrams, write code, and much more. 
                 What would you like to explore today?
               </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 max-w-2xl" style={{ gap: '12px' }}>
                 {[
                   "Explain quantum computing with a diagram",
                   "Create a flowchart for user registration",
@@ -374,7 +471,15 @@ const ChatPage: React.FC = () => {
                   <button
                     key={index}
                     onClick={() => handleSendMessage(suggestion)}
-                    className="p-3 bg-white border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-colors text-left"
+                    style={suggestionButtonStyle}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#9ca3af';
+                      e.currentTarget.style.backgroundColor = '#f9fafb';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#e5e7eb';
+                      e.currentTarget.style.backgroundColor = '#ffffff';
+                    }}
                   >
                     {suggestion}
                   </button>
@@ -398,7 +503,6 @@ const ChatPage: React.FC = () => {
                   />
                 );
               })}
-              
               
               <div ref={messagesEndRef} />
             </div>

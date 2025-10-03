@@ -1,3 +1,12 @@
+.mermaid .error {
+  display: none !important;
+}
+
+/* Hide error text containing "syntax error" */
+[class*="error"]:has-text("syntax error") {
+  display: none !important;
+}
+
 .App {
   text-align: center;
 }

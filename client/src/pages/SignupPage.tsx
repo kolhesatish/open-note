@@ -43,145 +43,323 @@ const SignupPage: React.FC = () => {
     }
   };
 
+  const containerStyle: React.CSSProperties = {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    padding: '48px 16px'
+  };
+
+  const cardStyle: React.CSSProperties = {
+    maxWidth: '400px',
+    width: '100%',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e5e7eb',
+    borderRadius: '16px',
+    padding: '40px 32px',
+    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)'
+  };
+
+  const iconContainerStyle: React.CSSProperties = {
+    width: '48px',
+    height: '48px',
+    backgroundColor: '#f3f4f6',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 24px'
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    border: '1px solid #d1d5db',
+    borderRadius: '8px',
+    fontSize: '14px',
+    color: '#111827',
+    backgroundColor: '#ffffff',
+    outline: 'none',
+    transition: 'all 0.2s ease-in-out'
+  };
+
+  const passwordInputStyle: React.CSSProperties = {
+    ...inputStyle,
+    paddingRight: '44px'
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: '6px'
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px 16px',
+    backgroundColor: '#111827',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    cursor: isLoading ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s ease-in-out',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    opacity: isLoading ? 0.7 : 1
+  };
+
+  const errorStyle: React.CSSProperties = {
+    backgroundColor: '#fef2f2',
+    border: '1px solid #fecaca',
+    color: '#b91c1c',
+    padding: '12px 16px',
+    borderRadius: '8px',
+    fontSize: '14px',
+    marginBottom: '20px'
+  };
+
+  const eyeButtonStyle: React.CSSProperties = {
+    position: 'absolute',
+    right: '12px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#9ca3af',
+    padding: '4px'
+  };
+
+  const loadingSpinnerStyle: React.CSSProperties = {
+    width: '16px',
+    height: '16px',
+    border: '2px solid transparent',
+    borderTop: '2px solid #ffffff',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite'
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-primary-100">
-            <UserPlus className="h-6 w-6 text-primary-600" />
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link
-              to="/login"
-              className="font-medium text-primary-600 hover:text-primary-500"
-            >
-              sign in to your existing account
-            </Link>
-          </p>
+    <div style={containerStyle}>
+      <div style={cardStyle}>
+        <div style={iconContainerStyle}>
+          <UserPlus size={24} style={{ color: '#6b7280' }} />
         </div>
         
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <h2 style={{ 
+          textAlign: 'center', 
+          fontSize: '24px', 
+          fontWeight: '600', 
+          marginBottom: '8px',
+          color: '#111827'
+        }}>
+          Create your account
+        </h2>
+        
+        <p style={{ 
+          textAlign: 'center', 
+          fontSize: '14px', 
+          marginBottom: '32px',
+          color: '#6b7280' 
+        }}>
+          Or{' '}
+          <Link
+            to="/login"
+            style={{ 
+              color: '#111827', 
+              fontWeight: '500',
+              textDecoration: 'none'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.textDecoration = 'underline';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.textDecoration = 'none';
+            }}
+          >
+            sign in to your existing account
+          </Link>
+        </p>
+        
+        <form onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            <div style={errorStyle}>
               {error}
             </div>
           )}
           
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                Username
-              </label>
+          <div style={{ marginBottom: '20px' }}>
+            <label htmlFor="username" style={labelStyle}>
+              Username
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
+              required
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              style={inputStyle}
+              placeholder="Enter your username"
+              onFocus={(e) => {
+                e.target.style.borderColor = '#9ca3af';
+                e.target.style.boxShadow = '0 0 0 3px rgb(156 163 175 / 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#d1d5db';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <label htmlFor="email" style={labelStyle}>
+              Email address
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={inputStyle}
+              placeholder="Enter your email"
+              onFocus={(e) => {
+                e.target.style.borderColor = '#9ca3af';
+                e.target.style.boxShadow = '0 0 0 3px rgb(156 163 175 / 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#d1d5db';
+                e.target.style.boxShadow = 'none';
+              }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: '20px' }}>
+            <label htmlFor="password" style={labelStyle}>
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your username"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={passwordInputStyle}
+                placeholder="Create a password"
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#9ca3af';
+                  e.target.style.boxShadow = '0 0 0 3px rgb(156 163 175 / 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
+              <button
+                type="button"
+                style={eyeButtonStyle}
+                onClick={() => setShowPassword(!showPassword)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#6b7280';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#9ca3af';
+                }}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
-            
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
+          </div>
+          
+          <div style={{ marginBottom: '24px' }}>
+            <label htmlFor="confirmPassword" style={labelStyle}>
+              Confirm Password
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="confirmPassword"
+                name="confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                autoComplete="new-password"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                style={passwordInputStyle}
+                placeholder="Confirm your password"
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#9ca3af';
+                  e.target.style.boxShadow = '0 0 0 3px rgb(156 163 175 / 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#d1d5db';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
-            </div>
-            
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-            
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4 text-gray-400" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-gray-400" />
-                  )}
-                </button>
-              </div>
+              <button
+                type="button"
+                style={eyeButtonStyle}
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#6b7280';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#9ca3af';
+                }}
+              >
+                {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
             </div>
           </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              ) : (
-                'Create account'
-              )}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={isLoading}
+            style={buttonStyle}
+            onMouseEnter={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.backgroundColor = '#1f2937';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isLoading) {
+                e.currentTarget.style.backgroundColor = '#111827';
+              }
+            }}
+          >
+            {isLoading ? (
+              <div style={loadingSpinnerStyle}></div>
+            ) : (
+              'Create account'
+            )}
+          </button>
         </form>
       </div>
+      
+      {/* Add CSS animation for spinner */}
+      <style>{`
+        @keyframes spin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 };

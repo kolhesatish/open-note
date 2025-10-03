@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Square } from 'lucide-react';
+import { Send, Square, Plus } from 'lucide-react';
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -13,82 +13,216 @@ const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false 
 }) => {
   const [message, setMessage] = useState('');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const inputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    if (inputRef.current && inputRef.current.textContent !== message) {
+      inputRef.current.textContent = message;
     }
   }, [message]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleInput = (e: React.FormEvent<HTMLDivElement>) => {
+    const text = e.currentTarget.textContent || '';
+    setMessage(text);
+  };
+
+  const handleSubmit = () => {
     if (message.trim() && !isLoading && !disabled) {
       onSendMessage(message.trim());
       setMessage('');
+      if (inputRef.current) {
+        inputRef.current.textContent = '';
+      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSubmit(e);
+      handleSubmit();
     }
   };
 
+  const handleFocus = () => {
+    setIsFocused(true);
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+  };
+
   const handleStop = () => {
-    // In a real implementation, this would cancel the ongoing request
     console.log('Stop generation requested');
   };
 
+  const containerStyle: React.CSSProperties = {
+    position: 'sticky',
+    bottom: 0,
+    zIndex: 10,
+    borderTop: '1px solid #e5e7eb',
+    backgroundColor: '#ffffff'
+  };
+
+  const inputContainerStyle: React.CSSProperties = {
+    border: `1px solid ${isFocused ? '#d1d5db' : '#e5e7eb'}`,
+    borderRadius: '24px',
+    backgroundColor: disabled ? '#f9fafb' : '#ffffff',
+    transition: 'all 0.2s ease-in-out',
+    boxShadow: isFocused ? '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)' : '0 1px 2px 0 rgb(0 0 0 / 0.05)'
+  };
+
+  const buttonStyle: React.CSSProperties = {
+    width: '32px',
+    height: '32px',
+    borderRadius: '50%',
+    border: 'none',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s ease-in-out',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  };
+
+  const addButtonStyle: React.CSSProperties = {
+    ...buttonStyle,
+    backgroundColor: 'transparent',
+    color: '#9ca3af'
+  };
+
+  const sendButtonStyle: React.CSSProperties = {
+    ...buttonStyle,
+    backgroundColor: message.trim() && !disabled ? '#111827' : '#e5e7eb',
+    color: message.trim() && !disabled ? '#ffffff' : '#9ca3af'
+  };
+
+  const inputStyle: React.CSSProperties = {
+    minHeight: '20px',
+    maxHeight: '128px',
+    overflowY: 'auto',
+    padding: '8px 12px',
+    fontSize: '14px',
+    lineHeight: '1.4',
+    color: disabled || isLoading ? '#9ca3af' : '#111827',
+    cursor: disabled || isLoading ? 'not-allowed' : 'text',
+    outline: 'none',
+    border: 'none',
+    backgroundColor: 'transparent',
+    wordWrap: 'break-word',
+    whiteSpace: 'pre-wrap',
+    resize: 'none'
+  };
+
+  const placeholderStyle: React.CSSProperties = {
+    position: 'absolute',
+    left: '12px',
+    top: '8px',
+    color: '#9ca3af',
+    fontSize: '14px',
+    pointerEvents: 'none',
+    userSelect: 'none'
+  };
+
   return (
-    <div className="border-t border-gray-200 bg-white p-4">
-      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
-        <div className="flex items-end space-x-3">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={disabled ? "Select or create a chat to start messaging..." : "Type your message here... (Shift+Enter for new line)"}
-              disabled={disabled || isLoading}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed"
-              rows={1}
-              style={{ minHeight: '48px', maxHeight: '120px' }}
-            />
-          </div>
+    <div style={containerStyle} className="p-4">
+      <div className="w-full max-w-4xl mx-auto">
+        <div className="flex items-end" style={{ gap: '12px', ...inputContainerStyle, padding: '8px' }}>
           
-          <div className="flex space-x-2">
+          {/* Add/Attachment Button */}
+          <button
+            type="button"
+            disabled={disabled}
+            style={addButtonStyle}
+            title="Add attachment"
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.backgroundColor = '#f3f4f6';
+                e.currentTarget.style.color = '#6b7280';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = '#9ca3af';
+              }
+            }}
+          >
+            <Plus size={16} />
+          </button>
+
+          {/* Input Area */}
+          <div className="flex-1 relative">
+            <div
+              ref={inputRef}
+              contentEditable={!disabled && !isLoading}
+              onInput={handleInput}
+              onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              style={inputStyle}
+              suppressContentEditableWarning={true}
+            />
+            
+            {/* Custom placeholder */}
+            {!message && !isFocused && (
+              <div style={placeholderStyle}>
+                {disabled ? "Select or create a chat to start messaging..." : "Message Claude..."}
+              </div>
+            )}
+          </div>
+
+          {/* Send/Stop Button */}
+          <div>
             {isLoading ? (
               <button
                 type="button"
                 onClick={handleStop}
-                className="p-3 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors"
+                style={{
+                  ...buttonStyle,
+                  backgroundColor: '#e5e7eb',
+                  color: '#6b7280'
+                }}
                 title="Stop generation"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#d1d5db';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e5e7eb';
+                }}
               >
-                {/* <Square className="h-5 w-5" /> */}
+                <Square size={12} />
               </button>
             ) : (
               <button
-                type="submit"
+                type="button"
+                onClick={handleSubmit}
                 disabled={!message.trim() || disabled}
-                className="p-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                style={sendButtonStyle}
                 title="Send message"
+                onMouseEnter={(e) => {
+                  if (message.trim() && !disabled) {
+                    e.currentTarget.style.backgroundColor = '#1f2937';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (message.trim() && !disabled) {
+                    e.currentTarget.style.backgroundColor = '#111827';
+                  }
+                }}
               >
-                <Send className="h-5 w-5" />
+                <Send size={12} />
               </button>
             )}
           </div>
         </div>
         
-        {message.trim() && (
-          <div className="mt-2 text-xs text-gray-500 text-right">
-            Press Enter to send, Shift+Enter for new line
+        {/* Helper text */}
+        {message.trim() && !disabled && (
+          <div className="mt-2 text-xs text-center" style={{ color: '#9ca3af' }}>
+            Press ⏎ to send, Shift + ⏎ for new line
           </div>
         )}
-      </form>
+      </div>
     </div>
   );
 };

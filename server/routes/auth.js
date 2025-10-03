@@ -10,7 +10,13 @@ const router = express.Router();
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // limit each IP to 5 requests per windowMs
-  message: { error: 'Too many authentication attempts, please try again later' }
+  message: { error: 'Too many authentication attempts, please try again later' },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  keyGenerator: (req) => {
+    // Use X-Forwarded-For header if available (Vercel proxy)
+    return req.ip || req.connection.remoteAddress || 'unknown';
+  }
 });
 
 // Sign up

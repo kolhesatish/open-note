@@ -8,15 +8,19 @@ import {
   SendMessageResponse,
   Message as MessageType
 } from '../types';
+import API_CONFIG from '../config/api';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 class ApiService {
   private api: AxiosInstance;
 
   constructor() {
+    console.log('🔗 Initializing API Service with base URL:', API_BASE_URL);
+    
     this.api = axios.create({
       baseURL: API_BASE_URL,
+      timeout: API_CONFIG.TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
       },
@@ -91,9 +95,38 @@ class ApiService {
     return response.data;
   }
 
-  async sendMessage(sessionId: number, content: string): Promise<SendMessageResponse> {
-    const response = await this.api.post<SendMessageResponse>(`/chat/sessions/${sessionId}/messages`, { content });
-    return response.data;
+  async sendMessage(sessionId: number, content: string, retries: number = 3): Promise<SendMessageResponse> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`📤 Send message attempt ${attempt}/${retries} for session ${sessionId}`);
+        
+        const response = await this.api.post<SendMessageResponse>(`/chat/sessions/${sessionId}/messages`, { content });
+        
+        if (response.data && response.data.assistantMessage) {
+          console.log(`✅ Send message successful on attempt ${attempt}`);
+          return response.data;
+        } else {
+          throw new Error('Invalid response structure');
+        }
+      } catch (error: any) {
+        console.error(`❌ Send message attempt ${attempt} failed:`, error);
+        
+        // Don't retry on client errors (4xx)
+        if (error.response?.status >= 400 && error.response?.status < 500) {
+          throw error;
+        }
+        
+        // Don't retry on last attempt
+        if (attempt === retries) {
+          throw new Error(`Failed to send message after ${retries} attempts: ${error.message}`);
+        }
+        
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    
+    throw new Error('Unexpected error in send message');
   }
 
   async sendMessageStream(
@@ -115,7 +148,10 @@ class ApiService {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
+        'Accept': 'text/event-stream',
+        'Cache-Control': 'no-cache',
       },
+      credentials: 'include',
       body: JSON.stringify({ content }),
     });
 
@@ -173,9 +209,38 @@ class ApiService {
     }
   }
 
-  async regenerateResponse(sessionId: number): Promise<{ assistantMessage: MessageType }> {
-    const response = await this.api.post<{ assistantMessage: MessageType }>(`/chat/sessions/${sessionId}/regenerate`);
-    return response.data;
+  async regenerateResponse(sessionId: number, retries: number = 3): Promise<{ assistantMessage: MessageType }> {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🔄 Regenerate attempt ${attempt}/${retries} for session ${sessionId}`);
+        
+        const response = await this.api.post<{ assistantMessage: MessageType }>(`/chat/sessions/${sessionId}/regenerate`);
+        
+        if (response.data && response.data.assistantMessage) {
+          console.log(`✅ Regenerate successful on attempt ${attempt}`);
+          return response.data;
+        } else {
+          throw new Error('Invalid response structure');
+        }
+      } catch (error: any) {
+        console.error(`❌ Regenerate attempt ${attempt} failed:`, error);
+        
+        // Don't retry on client errors (4xx)
+        if (error.response?.status >= 400 && error.response?.status < 500) {
+          throw error;
+        }
+        
+        // Don't retry on last attempt
+        if (attempt === retries) {
+          throw new Error(`Failed to regenerate response after ${retries} attempts: ${error.message}`);
+        }
+        
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    
+    throw new Error('Unexpected error in regenerate response');
   }
 
   // Utility methods
@@ -190,6 +255,42 @@ class ApiService {
 
   getAuthToken(): string | null {
     return localStorage.getItem('auth_token');
+  }
+
+  // Test API connection
+  async testConnection(): Promise<{ success: boolean; message: string; data?: any }> {
+    try {
+      console.log('🧪 Testing API connection to:', API_BASE_URL);
+      const response = await this.api.get('/ping');
+      console.log('✅ API connection test successful:', response.data);
+      return {
+        success: true,
+        message: 'API connection successful',
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('❌ API connection test failed:', error);
+      return {
+        success: false,
+        message: error.response?.data?.error || error.message || 'API connection failed'
+      };
+    }
+  }
+
+  // Get API health status
+  async getHealthStatus(): Promise<{ success: boolean; data?: any }> {
+    try {
+      const response = await this.api.get('/health');
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('❌ Health check failed:', error);
+      return {
+        success: false
+      };
+    }
   }
 }
 

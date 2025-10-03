@@ -26,36 +26,109 @@ class GeminiService {
     return Boolean(this.apiKey);
   }
 
-  async generate(prompt) {
+  async generate(prompt, retries = 3) {
     if (!this.isConfigured()) {
       throw new Error('Gemini API key not configured');
     }
+
+    // Validate and sanitize prompt
+    if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
+      throw new Error('Invalid prompt provided');
+    }
+
+    const sanitizedPrompt = prompt.trim().substring(0, 100000); // Limit prompt length
 
     const url = `${this.baseUrl}?key=${this.apiKey}`;
 
     const body = {
       contents: [
         {
-          parts: [{ text: prompt }],
+          parts: [{ text: sanitizedPrompt }],
         },
       ],
+      generationConfig: {
+        maxOutputTokens: 8192,
+        temperature: 0.7,
+        topP: 0.8,
+        topK: 40
+      }
     };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        console.log(`🔄 Gemini API attempt ${attempt}/${retries}`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-    if (!response.ok) {
-      const text = await response.text().catch(() => '');
-      throw new Error(`Gemini API request failed: ${response.status} ${response.statusText} ${text}`);
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'User-Agent': 'OpenNote-Backend/1.0'
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => '');
+          const errorMessage = `Gemini API request failed: ${response.status} ${response.statusText}`;
+          
+          // Handle specific error cases
+          if (response.status === 429) {
+            console.log('⚠️ Rate limit hit, waiting before retry...');
+            if (attempt < retries) {
+              await new Promise(resolve => setTimeout(resolve, 2000 * attempt)); // Exponential backoff
+              continue;
+            }
+          } else if (response.status >= 500) {
+            console.log('⚠️ Server error, retrying...');
+            if (attempt < retries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+              continue;
+            }
+          }
+          
+          throw new Error(`${errorMessage} ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        // Validate response structure
+        if (!data || !data.candidates || !Array.isArray(data.candidates)) {
+          throw new Error('Invalid response structure from Gemini API');
+        }
+
+        const parts = data.candidates[0]?.content?.parts || [];
+        const text = parts.map((p) => p?.text).filter(Boolean).join('\n').trim();
+        
+        if (!text) {
+          throw new Error('Empty response from Gemini API');
+        }
+
+        console.log(`✅ Gemini API success on attempt ${attempt}`);
+        return text;
+
+      } catch (error) {
+        console.error(`❌ Gemini API attempt ${attempt} failed:`, error.message);
+        
+        if (error.name === 'AbortError') {
+          console.log('⏰ Request timeout');
+        } else if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+          console.log('🌐 Network error');
+        }
+
+        if (attempt === retries) {
+          throw new Error(`Failed to generate response after ${retries} attempts: ${error.message}`);
+        }
+
+        // Wait before retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
     }
-
-    const data = await response.json();
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const text = parts.map((p) => p?.text).filter(Boolean).join('\n').trim();
-    return text || 'No response generated.';
   }
 
   _buildEnhancedPrompt(userMessage, conversationHistory = []) {
